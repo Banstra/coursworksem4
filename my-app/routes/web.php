@@ -1,9 +1,12 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\MainController;
 
-Route::view('/', 'welcome')->name('home');
-Route::view('/about', 'about')->name('about');
+Route::get('/', [MainController::class, 'index'])->name('home');
+Route::get('/about', function () {
+    return view('about');
+})->name('about');
 
 Route::get('/contacts', function () {
     $contacts = [
@@ -15,3 +18,5 @@ Route::get('/contacts', function () {
 
     return view('contacts', compact('contacts'));
 })->name('contacts');
+
+Route::get('/gallery/{imageName}', [MainController::class, 'gallery'])->name('gallery');
