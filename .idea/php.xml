@@ -124,6 +124,7 @@
       <path value="$PROJECT_DIR$/my-app/vendor/symfony/polyfill-mbstring" />
       <path value="$PROJECT_DIR$/my-app/vendor/symfony/polyfill-php80" />
       <path value="$PROJECT_DIR$/my-app/vendor/symfony/polyfill-php83" />
+      <path value="$PROJECT_DIR$/my-app/vendor/laravel/sanctum" />
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="8.5">

@@ -4,52 +4,112 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
 {
-    public function create()
+    /**
+     * Форма регистрации
+     */
+    public function showRegistrationForm()
     {
-        return view('auth.signin');
+        return view('auth.register');
     }
 
-    public function registration(Request $request)
+    /**
+     * Регистрация нового пользователя
+     */
+    public function register(Request $request)
     {
-        // 1. Валидация
         $validated = $request->validate([
-            'name'     => 'required|string|min:2|max:50',
-            'email'    => 'required|email|unique:users,email|max:100',
-            'password' => 'required|string|min:8|confirmed',
+            'name' => ['required', 'string', 'max:255', 'min:2'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'password' => ['required', 'confirmed', Password::defaults()],
         ], [
-            'name.required'      => 'Поле «Имя» обязательно',
-            'email.required'     => 'Укажите email',
-            'email.email'        => 'Введите корректный email',
-            'email.unique'       => 'Такой email уже зарегистрирован',
-            'password.required'  => 'Пароль обязателен',
-            'password.min'       => 'Минимум 8 символов',
+            'name.required' => 'Введите имя',
+            'name.min' => 'Имя должно быть не короче 2 символов',
+            'email.required' => 'Укажите email',
+            'email.unique' => 'Пользователь с таким email уже существует',
+            'password.required' => 'Введите пароль',
             'password.confirmed' => 'Пароли не совпадают',
         ]);
 
-        // 2. Сохранение в БД
         $user = User::create([
-            'name'     => $validated['name'],
-            'email'    => $validated['email'],
-            'password' => Hash::make($validated['password']), // ️ Обязательно хешируем!
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
         ]);
 
-        Log::info('User registered', ['id' => $user->id, 'email' => $user->email]);
+        // 🔐 Генерируем токен Sanctum (опционально для веб, но требуем по заданию)
+        $token = $user->createToken('web-token')->plainTextToken;
 
-        // 3. JSON-ответ по заданию
-        return response()->json([
-            'success' => true,
-            'message' => 'Пользователь успешно зарегистрирован',
-            'data'    => [
-                'id'         => $user->id,
-                'name'       => $user->name,
-                'email'      => $user->email,
-                'created_at' => $user->created_at->format('d.m.Y H:i:s'),
-            ]
-        ], 201);
+        // Сохраняем токен в сессию для последующих запросов (опционально)
+        // $request->session()->put('sanctum_token', $token);
+
+        return redirect()->route('login')
+            ->with('success', 'Регистрация успешна! Теперь войдите в систему.');
+    }
+
+    /**
+     * Форма входа
+     */
+    public function showLoginForm()
+    {
+        return view('auth.login');
+    }
+
+    /**
+     * Аутентификация пользователя
+     */
+    public function login(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'string', 'email'],
+            'password' => ['required', 'string'],
+        ]);
+
+        // Стандартная аутентификация через сессии (для веба)
+        if (!Auth::attempt($validated)) {
+            return back()->withErrors([
+                'email' => 'Неверный email или пароль',
+            ])->withInput($request->only('email'));
+        }
+
+        $request->session()->regenerate();
+
+        // 🔐 Создаём токен Sanctum для API-доступа
+        $user = Auth::user();
+        $token = $user->createToken('web-token')->plainTextToken;
+
+        // Опционально: сохраняем токен в кук/сессию для фронтенда
+        // cookie('sanctum_token', $token, 60*24);
+
+        return redirect()->route('home')
+            ->with('success', 'Добро пожаловать, ' . $user->name . '!');
+    }
+
+    /**
+     * Выход из системы
+     */
+    public function logout(Request $request)
+    {
+        $user = $request->user();
+
+        // 🔐 Удаляем все токены Sanctum пользователя
+        if ($user) {
+            $user->tokens()->delete();
+        }
+
+        // Завершаем сессию
+        Auth::logout();
+
+        // Инвалидируем сессию и регенерируем CSRF-токен
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('home')
+            ->with('success', 'Вы вышли из системы');
     }
 }

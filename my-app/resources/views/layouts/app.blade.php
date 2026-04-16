@@ -100,10 +100,24 @@
 
 <body>
     <header>
+        <!-- В <nav> добавьте: -->
         <nav>
             <a href="{{ route('home') }}">Главная</a>
-            <a href="{{ route('about') }}">О нас</a>
-            <a href="{{ route('contacts') }}">Контакты</a>
+            <a href="{{ route('articles.index') }}">Новости</a>
+
+            @auth
+                <a href="{{ route('profile') }}">Профиль</a>
+                <a href="{{ route('articles.create') }}">+ Статья</a>
+                <form action="{{ route('logout') }}" method="POST" style="display: inline;">
+                    @csrf
+                    <button type="submit" style="background: none; border: none; color: #fff; cursor: pointer; font: inherit; text-decoration: underline;">
+                        Выход ({{ Auth::user()->name }})
+                    </button>
+                </form>
+            @else
+                <a href="{{ route('login') }}">Вход</a>
+                <a href="{{ route('register') }}">Регистрация</a>
+            @endauth
         </nav>
     </header>
 
