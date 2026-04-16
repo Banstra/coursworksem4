@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Article;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Mail\NewArticleNotification;
+use App\Models\User;
+use Illuminate\Support\Facades\Mail;
 
 class ArticleController extends Controller // Убедитесь, что расширяете базовый Controller
 {
@@ -23,7 +26,7 @@ class ArticleController extends Controller // Убедитесь, что рас�
 
     public function store(Request $request)
     {
-        $this->authorize('create', Article::class); // ← Ручная проверка
+        $this->authorize('create', Article::class);
 
         $validated = $request->validate([
             'name' => 'required|string|min:3|max:200',
@@ -35,6 +38,8 @@ class ArticleController extends Controller // Убедитесь, что рас�
         ]);
 
         $data = $validated;
+
+        // Обработка изображений
         if ($request->hasFile('preview_image')) {
             $filename = time() . '_preview_' . $request->file('preview_image')->getClientOriginalName();
             $request->file('preview_image')->move(public_path('images'), $filename);
@@ -46,8 +51,20 @@ class ArticleController extends Controller // Убедитесь, что рас�
             $data['full_image'] = $filename;
         }
 
-        Article::create($data);
-        return redirect()->route('articles.index')->with('success', 'Новость создана');
+        // Создаём статью
+        $article = Article::create($data);
+
+        // 📧 Отправляем уведомление всем модераторам
+        $moderators = User::whereHas('role', fn($q) => $q->where('name', 'moderator'))->get();
+
+        foreach ($moderators as $moderator) {
+            Mail::to($moderator->email)->send(
+                new NewArticleNotification($article, $moderator)
+            );
+        }
+
+        return redirect()->route('articles.index')
+            ->with('success', 'Новость создана. Уведомление отправлено модераторам.');
     }
 
     public function show(Article $article)
