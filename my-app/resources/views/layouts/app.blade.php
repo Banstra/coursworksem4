@@ -106,12 +106,23 @@
             <a href="{{ route('articles.index') }}">Новости</a>
 
             @auth
-                <a href="{{ route('profile') }}">Профиль</a>
-                <a href="{{ route('articles.create') }}">+ Статья</a>
+                {{-- Кнопка "Создать новость" — только для модератора --}}
+                @can('create', App\Models\Article::class)
+                    <a href="{{ route('articles.create') }}" style="background: #27ae60; color: white; padding: 8px 12px; border-radius: 4px;">+ Новость</a>
+                @endcan
+
+                {{-- Профиль с ролью --}}
+                <span style="color: #ccc; margin: 0 10px;">
+            {{ Auth::user()->name }}
+                    @if(Auth::user()->role)
+                        <small style="color: #f39c12;">({{ Auth::user()->role->label }})</small>
+                    @endif
+        </span>
+
                 <form action="{{ route('logout') }}" method="POST" style="display: inline;">
                     @csrf
-                    <button type="submit" style="background: none; border: none; color: #fff; cursor: pointer; font: inherit; text-decoration: underline;">
-                        Выход ({{ Auth::user()->name }})
+                    <button type="submit" style="background: none; border: none; color: #fff; cursor: pointer; text-decoration: underline;">
+                        Выход
                     </button>
                 </form>
             @else

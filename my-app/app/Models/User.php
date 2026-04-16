@@ -15,7 +15,9 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role_id', // ← новое поле
     ];
+
 
     protected $hidden = [
         'password',
@@ -26,4 +28,18 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed', // Laravel 11+
     ];
+
+    // Добавьте в свойства:
+
+// Добавьте метод для проверки роли:
+    public function hasRole(string $roleName): bool
+    {
+        return $this->role?->name === $roleName;
+    }
+
+// Отношение к роли:
+    public function role(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Role::class);
+    }
 }

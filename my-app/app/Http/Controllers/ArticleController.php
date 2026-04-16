@@ -6,35 +6,34 @@ use App\Models\Article;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
-class ArticleController extends Controller
+class ArticleController extends Controller // Убедитесь, что расширяете базовый Controller
 {
-    // 1. Список с пагинацией
     public function index()
     {
-        $articles = Article::latest('published_at')->paginate(4); // Пагинация по 4 шт.
+        // viewAny разрешён всем — проверка не нужна
+        $articles = Article::latest('published_at')->paginate(4);
         return view('articles.index', compact('articles'));
     }
 
-    // 2. Форма создания (Read View)
     public function create()
     {
+        $this->authorize('create', Article::class); // ← Ручная проверка
         return view('articles.create');
     }
 
-    // 3. Сохранение в БД (Store)
     public function store(Request $request)
     {
-        // Валидация
+        $this->authorize('create', Article::class); // ← Ручная проверка
+
         $validated = $request->validate([
-            'name'          => 'required|string|min:3|max:200',
-            'published_at'  => 'required|date',
-            'short_desc'    => 'nullable|string|max:500',
-            'full_text'     => 'required|string',
+            'name' => 'required|string|min:3|max:200',
+            'published_at' => 'required|date',
+            'short_desc' => 'nullable|string|max:500',
+            'full_text' => 'required|string',
             'preview_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-            'full_image'    => 'nullable|image|mimes:jpg,jpeg,png|max:4096',
+            'full_image' => 'nullable|image|mimes:jpg,jpeg,png|max:4096',
         ]);
 
-        // Обработка файлов
         $data = $validated;
         if ($request->hasFile('preview_image')) {
             $filename = time() . '_preview_' . $request->file('preview_image')->getClientOriginalName();
@@ -47,43 +46,38 @@ class ArticleController extends Controller
             $data['full_image'] = $filename;
         }
 
-
         Article::create($data);
-
-        return redirect()->route('articles.index')
-            ->with('success', 'Новость успешно создана');
+        return redirect()->route('articles.index')->with('success', 'Новость создана');
     }
 
-    // 4. Просмотр одной новости (Show)
     public function show(Article $article)
     {
+        $this->authorize('view', $article);
         return view('articles.show', compact('article'));
     }
 
-    // 5. Форма редактирования (Edit)
     public function edit(Article $article)
     {
+        $this->authorize('update', $article);
         return view('articles.edit', compact('article'));
     }
 
-    // 6. Обновление данных (Update)
     public function update(Request $request, Article $article)
     {
+        $this->authorize('update', $article);
+
         $validated = $request->validate([
-            'name'          => 'required|string|min:3|max:200',
-            'published_at'  => 'required|date',
-            'short_desc'    => 'nullable|string|max:500',
-            'full_text'     => 'required|string',
+            'name' => 'required|string|min:3|max:200',
+            'published_at' => 'required|date',
+            'short_desc' => 'nullable|string|max:500',
+            'full_text' => 'required|string',
             'preview_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-            'full_image'    => 'nullable|image|mimes:jpg,jpeg,png|max:4096',
+            'full_image' => 'nullable|image|mimes:jpg,jpeg,png|max:4096',
         ]);
 
-        // Если загружены новые картинки — сохраняем их, старые удаляем
         if ($request->hasFile('preview_image')) {
-            // Удаляем старое превью, если оно есть и не является стандартным
-            $oldPreview = $article->preview_image;
-            if ($oldPreview && !in_array($oldPreview, ['preview.jpg', 'preview_2.jpg'])) {
-                $oldPath = public_path('images/' . $oldPreview);
+            if ($article->preview_image && !in_array($article->preview_image, ['preview.jpg', 'preview_2.jpg'])) {
+                $oldPath = public_path('images/' . $article->preview_image);
                 if (file_exists($oldPath)) unlink($oldPath);
             }
             $filename = time() . '_preview_' . $request->file('preview_image')->getClientOriginalName();
@@ -92,9 +86,8 @@ class ArticleController extends Controller
         }
 
         if ($request->hasFile('full_image')) {
-            $oldFull = $article->full_image;
-            if ($oldFull && !in_array($oldFull, ['full.jpeg', 'full_2.jpeg'])) {
-                $oldPath = public_path('images/' . $oldFull);
+            if ($article->full_image && !in_array($article->full_image, ['full.jpeg', 'full_2.jpeg'])) {
+                $oldPath = public_path('images/' . $article->full_image);
                 if (file_exists($oldPath)) unlink($oldPath);
             }
             $filename = time() . '_full_' . $request->file('full_image')->getClientOriginalName();
@@ -103,15 +96,13 @@ class ArticleController extends Controller
         }
 
         $article->update($validated);
-
-        return redirect()->route('articles.index')
-            ->with('success', 'Новость обновлена');
+        return redirect()->route('articles.index')->with('success', 'Новость обновлена');
     }
 
-    // 7. Удаление (Destroy)
     public function destroy(Article $article)
     {
-        // Удаляем файлы из public/images/
+        $this->authorize('delete', $article);
+
         if ($article->preview_image && !in_array($article->preview_image, ['preview.jpg', 'preview_2.jpg'])) {
             $path = public_path('images/' . $article->preview_image);
             if (file_exists($path)) unlink($path);
@@ -122,7 +113,6 @@ class ArticleController extends Controller
         }
 
         $article->delete();
-
         return redirect()->route('articles.index')->with('success', 'Новость удалена');
     }
 }

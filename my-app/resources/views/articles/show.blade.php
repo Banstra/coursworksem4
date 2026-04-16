@@ -17,14 +17,15 @@
         <hr style="margin: 30px 0; border: 0; border-top: 1px solid #ddd;">
 
         <!-- Кнопки управления -->
-        <div style="display: flex; gap: 10px;">
-            <a href="{{ route('articles.edit', $article) }}" style="background: #f39c12; color: white; padding: 10px 15px; text-decoration: none; border-radius: 4px;">️ Редактировать</a>
+        @can('update', $article)
+            <a href="{{ route('articles.edit', $article) }}" class="btn-edit">✏️ Редактировать</a>
+        @endcan
 
-            <form action="{{ route('articles.destroy', $article) }}" method="POST" onsubmit="return confirm('Удалить эту новость?');">
-                @csrf
-                @method('DELETE')
-                <button type="submit" style="background: #e74c3c; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer;">🗑️ Удалить</button>
+        @can('delete', $article)
+            <form action="{{ route('articles.destroy', $article) }}" method="POST" onsubmit="return confirm('Удалить?');" style="display: inline;">
+                @csrf @method('DELETE')
+                <button type="submit" class="btn-delete">🗑️ Удалить</button>
             </form>
-        </div>
+        @endcan
     </div>
 @endsection
