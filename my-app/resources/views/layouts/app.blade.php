@@ -106,12 +106,26 @@
             <a href="{{ route('articles.index') }}">Новости</a>
 
             @auth
-                {{-- Кнопка "Создать новость" — только для модератора --}}
                 @can('create', App\Models\Article::class)
-                    <a href="{{ route('articles.create') }}" style="background: #27ae60; color: white; padding: 8px 12px; border-radius: 4px;">+ Новость</a>
+                    <a href="{{ route('articles.create') }}">+ Новость</a>
                 @endcan
 
-                {{-- Профиль с ролью --}}
+                {{-- 🔍 Ссылка на модерацию — только для модераторов --}}
+                @can('moderate', App\Models\Comment::class)
+                    <a href="{{ route('comments.moderation.index') }}"
+                       style="background: #f39c12; color: white; padding: 6px 12px; border-radius: 4px;">
+                        🔍 Модерация
+                        @php
+                            $pendingCount = \App\Models\Comment::pending()->count();
+                        @endphp
+                        @if($pendingCount > 0)
+                            <span style="background: #e74c3c; color: white; padding: 2px 6px; border-radius: 50%; font-size: 11px; margin-left: 4px;">
+                        {{ $pendingCount }}
+                    </span>
+                        @endif
+                    </a>
+                @endcan
+
                 <span style="color: #ccc; margin: 0 10px;">
             {{ Auth::user()->name }}
                     @if(Auth::user()->role)

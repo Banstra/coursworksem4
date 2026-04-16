@@ -4,13 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Article extends Model
 {
     use HasFactory;
 
-    // Разрешаем массовое назначение для этих полей
     protected $fillable = [
         'name',
         'slug',
@@ -21,10 +21,21 @@ class Article extends Model
         'published_at',
     ];
 
-    // Автоматическое приведение дат
     protected $casts = [
         'published_at' => 'date:Y-m-d',
     ];
+
+    // 🔗 Отношение: у статьи много комментариев
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    // 🔗 Отношение: комментарии, прошедшие модерацию (удобный скоуп)
+    public function approvedComments(): HasMany
+    {
+        return $this->comments()->where('is_approved', true);
+    }
 
     // Автоматическая генерация slug из name (если не передан)
     protected function slug(): Attribute
