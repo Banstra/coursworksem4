@@ -1,43 +1,36 @@
 @extends('layouts.app')
 
-@section('title', 'Новости')
+@section('title', 'Список новостей')
 
 @section('content')
-    <h1 style="color: #2c3e50; margin-bottom: 20px;">📰 Последние новости</h1>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h1>Новости</h1>
+        <a href="{{ route('articles.create') }}" style="background: #27ae60; color: white; padding: 10px 15px; text-decoration: none; border-radius: 4px;">+ Добавить новость</a>
+    </div>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
-        @forelse($articles as $article)
-            <article style="border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+    @if(session('success'))
+        <div style="background: #d4edda; color: #155724; padding: 10px; margin-bottom: 15px; border-radius: 4px;">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+        @foreach($articles as $article)
+            <article style="border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: #fff;">
                 <a href="{{ route('articles.show', $article) }}">
                     <img src="{{ asset('images/' . $article->preview_image) }}"
                          alt="{{ $article->name }}"
                          style="width: 100%; height: 180px; object-fit: cover;">
                 </a>
                 <div style="padding: 15px;">
-                    <time style="color: #7f8c8d; font-size: 13px;">{{ $article->published_at->format('d.m.Y') }}</time>
-                    <h3 style="margin: 8px 0; color: #2c3e50;">
-                        <a href="{{ route('articles.show', $article) }}" style="color: inherit; text-decoration: none;">
-                            {{ $article->name }}
-                        </a>
-                    </h3>
-                    <p style="color: #555; font-size: 14px; margin: 0;">
-                        {{ Str::limit($article->short_desc, 100) }}
-                    </p>
-                    <a href="{{ route('articles.show', $article) }}"
-                       style="display: inline-block; margin-top: 10px; color: #3498db; text-decoration: none; font-weight: 500;">
-                        Читать далее →
-                    </a>
+                    <h3 style="margin: 0 0 10px;"><a href="{{ route('articles.show', $article) }}" style="color: inherit; text-decoration: none;">{{ $article->name }}</a></h3>
+                    <p style="font-size: 14px; color: #777;">{{ \Str::limit($article->short_desc, 80) }}</p>
                 </div>
             </article>
-        @empty
-            <p style="grid-column: 1/-1; text-align: center; color: #7f8c8d;">
-                Новостей пока нет. Запустите <code>php artisan db:seed</code> для наполнения.
-            </p>
-        @endforelse
+        @endforeach
     </div>
 
-    {{-- Пагинация --}}
-    <div style="margin-top: 30px;">
+    <div style="margin-top: 10px;">
         {{ $articles->links() }}
     </div>
 @endsection
