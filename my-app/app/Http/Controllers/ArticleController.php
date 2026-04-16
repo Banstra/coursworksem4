@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Storage;
 use App\Mail\NewArticleNotification;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;
+use App\Jobs\VeryLongJob;
+use Illuminate\Support\Facades\Auth;
 
 class ArticleController extends Controller // Убедитесь, что расширяете базовый Controller
 {
@@ -54,17 +56,15 @@ class ArticleController extends Controller // Убедитесь, что рас�
         // Создаём статью
         $article = Article::create($data);
 
-        // 📧 Отправляем уведомление всем модераторам
+        // 🔁 Отправляем задание в очередь (вместо прямой отправки письма)
         $moderators = User::whereHas('role', fn($q) => $q->where('name', 'moderator'))->get();
 
         foreach ($moderators as $moderator) {
-            Mail::to($moderator->email)->send(
-                new NewArticleNotification($article, $moderator)
-            );
+            VeryLongJob::dispatch($article, $moderator);
         }
 
         return redirect()->route('articles.index')
-            ->with('success', 'Новость создана. Уведомление отправлено модераторам.');
+            ->with('success', 'Новость создана. Уведомление отправлено в очередь.');
     }
 
     public function show(Article $article)

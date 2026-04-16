@@ -71,3 +71,9 @@ Route::post('/articles/{article}/comments', function (Request $request, Article 
 
     return redirect()->back()->with('pending', '🕐 Ваш комментарий отправлен на модерацию.');
 })->middleware('auth:sanctum')->name('comments.store');
+
+Route::get('/test-log', function () {
+    \Log::debug('🧪 Тестовая запись в лог');
+    \Log::info('Пользователь зашёл на /test-log');
+    return 'Проверьте storage/logs/laravel.log';
+});

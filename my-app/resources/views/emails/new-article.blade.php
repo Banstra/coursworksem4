@@ -3,7 +3,7 @@
 
     Здравствуйте, **{{ $moderatorName }}**!
 
-    Пользователь **{{ Auth::user()?->name ?? 'Система' }}** добавил новую статью:
+    Пользователь **{{ $userName ?? 'Система' }}** добавил новую статью:
 
     ## {{ $article->name }}
 
@@ -15,11 +15,16 @@
         @endif
     </x-mail::panel>
 
+    {{-- ✅ Изображение через обычный HTML --}}
     @if($article->preview_image)
-        <x-mail::image src="{{ asset('images/' . $article->preview_image) }}" alt="{{ $article->name }}" />
+        <div style="text-align: center; margin: 20px 0;">
+            <img src="{{ url('images/' . $article->preview_image) }}"
+                 alt="{{ $article->name }}"
+                 style="max-width: 100%; height: auto; border-radius: 4px;">
+        </div>
     @endif
 
-    <x-mail::button :url="$articleUrl">
+    <x-mail::button :url="url('/articles/' . $article->id)">
         👁️ Просмотреть статью
     </x-mail::button>
 
