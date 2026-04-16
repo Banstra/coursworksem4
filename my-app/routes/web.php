@@ -2,11 +2,14 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MainController;
+use App\Http\Controllers\AuthController;
 
+// Главная + галерея
 Route::get('/', [MainController::class, 'index'])->name('home');
-Route::get('/about', function () {
-    return view('about');
-})->name('about');
+Route::get('/gallery/{imageName}', [MainController::class, 'gallery'])->name('gallery');
+
+// Статические страницы
+Route::view('/about', 'about')->name('about');
 
 Route::get('/contacts', function () {
     $contacts = [
@@ -15,8 +18,9 @@ Route::get('/contacts', function () {
         ['type' => 'Telegram', 'value' => '@username'],
         ['type' => 'Адрес',    'value' => 'г. Москва, ул. Учебная, д. 10'],
     ];
-
     return view('contacts', compact('contacts'));
 })->name('contacts');
 
-Route::get('/gallery/{imageName}', [MainController::class, 'gallery'])->name('gallery');
+// 🔐 Авторизация / Регистрация
+Route::get('/signin', [AuthController::class, 'create'])->name('signin');
+Route::post('/signin', [AuthController::class, 'registration'])->name('signin.store');
